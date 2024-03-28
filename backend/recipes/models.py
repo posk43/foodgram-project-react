@@ -1,9 +1,17 @@
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
-from django.core.validators import MinValueValidator, RegexValidator
+from django.core.validators import (MinValueValidator,
+                                    MaxValueValidator,
+                                    RegexValidator)
 from django.db import models
 
-from .constant import MAX_LENGTH, LENTH_COLOR
+# Import constants
+from .constant import (MAX_LENGTH,
+                       LENTH_COLOR,
+                       MIN_AMOUNT_VALIDATOR,
+                       MAX_AMOUNT_VALIDATOR,
+                       MIN_COOKING_TIME,
+                       MAX_COOKING_TIME)
 
 User = get_user_model()
 
@@ -24,7 +32,6 @@ class Ingredient(models.Model):
         verbose_name = 'Ингредиент'
         verbose_name_plural = 'Ингредиенты'
         ordering = ('name',)
-        unique_together = ('name', 'measurement_unit')
 
     def __str__(self):
         return f'{self.name} {self.measurement_unit}'
@@ -77,7 +84,8 @@ class Recipe(models.Model):
     )
     cooking_time = models.PositiveSmallIntegerField(
         verbose_name='Время приготовления (в минутах)',
-        validators=[MinValueValidator(1)]
+        validators=[MinValueValidator(MIN_COOKING_TIME),
+                    MaxValueValidator(MAX_COOKING_TIME)]
     )
     author = models.ForeignKey(
         User,
@@ -100,6 +108,7 @@ class Recipe(models.Model):
     class Meta:
         verbose_name = 'Рецепт'
         verbose_name_plural = 'Рецепты'
+        ordering = ('name',)
 
     def __str__(self):
         return self.name
@@ -114,7 +123,8 @@ class IngredientInRecipe(models.Model):
         related_name='recipe_ingredients')
     amount = models.PositiveSmallIntegerField(
         verbose_name='Количество',
-        validators=[MinValueValidator(1)],
+        validators=[MinValueValidator(MIN_AMOUNT_VALIDATOR),
+                    MaxValueValidator(MAX_AMOUNT_VALIDATOR)],
         null=True
     )
 
@@ -141,12 +151,6 @@ class TagInRecipe(models.Model):
     class Meta:
         verbose_name = 'Тег рецепта'
         verbose_name_plural = 'Теги рецепта'
-        constraints = (
-            models.UniqueConstraint(
-                fields=('tag', 'recipe'),
-                name='unique_tag_in_recipe'
-            ),
-        )
 
     def __str__(self):
         return self.tag.name
