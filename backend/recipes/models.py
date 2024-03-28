@@ -2,12 +2,9 @@ from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
 from django.core.validators import MinValueValidator, RegexValidator
 from django.db import models
-
+from .constant import MAX_LENGTH, LENTH_COLOR
 
 User = get_user_model()
-
-MAX_LENGTH = 200
-LENTH_COLOR = 7
 
 
 class Ingredient(models.Model):
