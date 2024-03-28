@@ -13,7 +13,6 @@ from rest_framework.viewsets import ModelViewSet, ReadOnlyModelViewSet
 from recipes.models import (Favorite, Ingredient, IngredientInRecipe, Recipe,
                             ShoppingCart, Tag, User)
 from users.models import Subscribe
-
 from .filters import IngredientSearchFilter, RecipeFilter
 from .pagination import CustomPagination
 from .permissions import IsAuthorOrAdmin
@@ -45,11 +44,11 @@ class RecipeViewSet(ModelViewSet):
     pagination_class = CustomPagination
 
     def get_queryset(self):
-        queryset = Recipe.objects.all().select_related(
-            'author').prefetch_related(
+        return Recipe.objects.all().select_related(
+            'author'
+        ).prefetch_related(
             'ingredients', 'tags'
         ).order_by('-id')
-        return queryset
 
     def perform_create(self, serializer):
         serializer.save(author=self.request.user)
@@ -174,11 +173,9 @@ class CustomUserViewSet(UserViewSet):
                 author, data=request.data, context={'request': request}
             )
             serializer.is_valid(raise_exception=True)
-            Subscribe.objects.create(user=user, author=author)
+            user.subscriptions.create(author=author)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
-        subscription = Subscribe.objects.filter(
-            user=user, author=author
-        ).first()
+        subscription = user.subscriptions.filter(author=author).first()
         if not subscription:
             return Response(
                 {'error': 'Вы не подписаны на этого пользователя!'},

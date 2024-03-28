@@ -36,12 +36,9 @@ class ProfileSerializer(UserSerializer):
         )
 
     def get_is_subscribed(self, obj):
-        user = self.context.get('request').user
+        user = self.context['request'].user
         if user and not user.is_anonymous:
-            return Subscribe.objects.filter(
-                user=user,
-                author=obj
-            ).exists()
+            return obj.subscriptions.filter(user=user).exists()
         return False
 
 
@@ -93,17 +90,17 @@ class RecipeListSerializer(serializers.ModelSerializer):
         )
 
     def get_is_favorited(self, obj):
-        user = self.context.get('request').user
+        user = self.context['request'].user
         return (
-            user.is_authenticated
-            and Favorite.objects.filter(user=user, recipe=obj).exists()
+                user.is_authenticated
+                and user.favorites.filter(recipe=obj).exists()
         )
 
     def get_is_in_shopping_cart(self, obj):
-        user = self.context.get('request').user
+        user = self.context['request'].user
         return (
-            user.is_authenticated
-            and ShoppingCart.objects.filter(user=user, recipe=obj).exists()
+                user.is_authenticated
+                and user.shopping_cart.filter(recipe=obj).exists()
         )
 
 
@@ -112,16 +109,12 @@ class AddIngredientSerializer(serializers.ModelSerializer):
 
     id = serializers.PrimaryKeyRelatedField(queryset=Ingredient.objects.all())
     amount = serializers.IntegerField(
-        validators=(
-            MinValueValidator(
-                limit_value=MIN_VALUE,
-                message=f'Количество ингредиента меньше {MIN_VALUE}!'
-            ),
-            MaxValueValidator(
-                limit_value=MAX_VALUE,
-                message=f'Количество ингредиента больше {MAX_VALUE}!'
-            )
-        )
+        min_value=MIN_VALUE,
+        max_value=MAX_VALUE,
+        error_messages={
+            'min_value': f'Количество ингредиента меньше {MIN_VALUE}!',
+            'max_value': f'Количество ингредиента больше {MAX_VALUE}!'
+        }
     )
 
     class Meta:
@@ -140,16 +133,12 @@ class RecipeSerializer(serializers.ModelSerializer):
         many=True
     )
     cooking_time = serializers.IntegerField(
-        validators=(
-            MinValueValidator(
-                limit_value=MIN_VALUE,
-                message=f'Время приготовления меньше {MIN_VALUE} минуты!'
-            ),
-            MaxValueValidator(
-                limit_value=MAX_VALUE,
-                message=f'Время приготовления больше {MAX_VALUE} минут!'
-            )
-        )
+        min_value=MIN_VALUE,
+        max_value=MAX_VALUE,
+        error_messages={
+            'min_value': f'Время приготовления меньше {MIN_VALUE} минуты!',
+            'max_value': f'Время приготовления больше {MAX_VALUE} минут!'
+        }
     )
 
     class Meta:
@@ -160,7 +149,7 @@ class RecipeSerializer(serializers.ModelSerializer):
         )
 
     def validate_ingredients(self, ingredients):
-        if len(ingredients) < 1:
+        if not ingredients:
             raise serializers.ValidationError(
                 {'ingredients': 'Нужно выбрать хотя бы один ингредиент!'}
             )
@@ -175,7 +164,7 @@ class RecipeSerializer(serializers.ModelSerializer):
         return ingredients
 
     def validate_tags(self, tags):
-        if len(tags) < 1:
+        if not tags:
             raise serializers.ValidationError(
                 {'tags': 'Нужно выбрать хотя бы один тег!'}
             )
@@ -261,8 +250,8 @@ class SubscribeListSerializer(ProfileSerializer):
 
     def validate(self, data):
         author = self.instance
-        user = self.context.get('request').user
-        if Subscribe.objects.filter(author=author, user=user).exists():
+        user = self.context['request'].user
+        if author.subscriptions.filter(user=user).exists():
             raise ValidationError(
                 'Подписка уже оформлена!',
             )
