@@ -1,14 +1,12 @@
 from django.contrib.auth import get_user_model
-from django.core.validators import MaxValueValidator, MinValueValidator
 from djoser.serializers import UserCreateSerializer, UserSerializer
 from drf_extra_fields.fields import Base64ImageField
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
 
 from recipes.constant import MIN_VALUE, MAX_VALUE
-from recipes.models import (Favorite, Ingredient, IngredientInRecipe, Recipe,
-                            ShoppingCart, Tag, TagInRecipe)
-from users.models import Subscribe
+from recipes.models import ( Ingredient, IngredientInRecipe,
+                             Recipe, Tag, TagInRecipe)
 
 
 User = get_user_model()
@@ -94,14 +92,14 @@ class RecipeListSerializer(serializers.ModelSerializer):
         return (
                 user.is_authenticated
                 and user.favorites.filter(recipe=obj).exists()
-        )
+            )
 
     def get_is_in_shopping_cart(self, obj):
         user = self.context['request'].user
         return (
                 user.is_authenticated
                 and user.shopping_cart.filter(recipe=obj).exists()
-        )
+            )
 
 
 class AddIngredientSerializer(serializers.ModelSerializer):
