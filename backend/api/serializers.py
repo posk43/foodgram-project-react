@@ -147,13 +147,14 @@ class RecipeSerializer(serializers.ModelSerializer):
     cooking_time = serializers.IntegerField(
         validators=[
             MinValueValidator(
-                limit_value=MIN_COOKING_TIME,
+                min_value=MIN_COOKING_TIME,
                 message=f'Время приготовления меньше '
                         f'{MIN_COOKING_TIME} минуты!'
             ),
             MaxValueValidator(
-                limit_value=MAX_COOKING_TIME,
-                message=f'Время приготовления больше {MAX_COOKING_TIME} минут!'
+                max_value=MAX_COOKING_TIME,
+                message=f'Время приготовления больше '
+                        f'{MAX_COOKING_TIME} минут!'
             )
         ]
     )
