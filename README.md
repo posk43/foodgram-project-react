@@ -96,3 +96,6 @@ sudo docker-compose up -d --build
 ### Суперпользователь
 ##### Логин: petyaposk@gmail.com
 ##### Пароль: Abugot43
+
+## Автор работы:
+### Лиджиев Петр 
