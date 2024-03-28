@@ -1,12 +1,14 @@
 from django.contrib.auth import get_user_model
+from django.core.validators import MaxValueValidator, MinValueValidator
 from djoser.serializers import UserCreateSerializer, UserSerializer
 from drf_extra_fields.fields import Base64ImageField
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
 
 from recipes.constant import MIN_VALUE, MAX_VALUE
-from recipes.models import (Ingredient, IngredientInRecipe, Recipe,
-                            Tag, TagInRecipe)
+from recipes.models import (Favorite, Ingredient, IngredientInRecipe, Recipe,
+                            ShoppingCart, Tag, TagInRecipe)
+from users.models import Subscribe
 
 
 User = get_user_model()
@@ -34,9 +36,12 @@ class ProfileSerializer(UserSerializer):
         )
 
     def get_is_subscribed(self, obj):
-        user = self.context['request'].user
+        user = self.context.get('request').user
         if user and not user.is_anonymous:
-            return obj.subscriptions.filter(user=user).exists()
+            return Subscribe.objects.filter(
+                user=user,
+                author=obj
+            ).exists()
         return False
 
 
@@ -88,17 +93,17 @@ class RecipeListSerializer(serializers.ModelSerializer):
         )
 
     def get_is_favorited(self, obj):
-        user = self.context['request'].user
+        user = self.context.get('request').user
         return (
             user.is_authenticated
-            and user.favorites.filter(recipe=obj).exists()
+            and Favorite.objects.filter(user=user, recipe=obj).exists()
         )
 
     def get_is_in_shopping_cart(self, obj):
-        user = self.context['request'].user
+        user = self.context.get('request').user
         return (
             user.is_authenticated
-            and user.shopping_cart.filter(recipe=obj).exists()
+            and ShoppingCart.objects.filter(user=user, recipe=obj).exists()
         )
 
 
@@ -107,12 +112,16 @@ class AddIngredientSerializer(serializers.ModelSerializer):
 
     id = serializers.PrimaryKeyRelatedField(queryset=Ingredient.objects.all())
     amount = serializers.IntegerField(
-        min_value=MIN_VALUE,
-        max_value=MAX_VALUE,
-        error_messages={
-            'min_value': f'Количество ингредиента меньше {MIN_VALUE}!',
-            'max_value': f'Количество ингредиента больше {MAX_VALUE}!'
-        }
+        validators=(
+            MinValueValidator(
+                limit_value=MIN_VALUE,
+                message=f'Количество ингредиента меньше {MIN_VALUE}!'
+            ),
+            MaxValueValidator(
+                limit_value=MAX_VALUE,
+                message=f'Количество ингредиента больше {MAX_VALUE}!'
+            )
+        )
     )
 
     class Meta:
@@ -131,12 +140,16 @@ class RecipeSerializer(serializers.ModelSerializer):
         many=True
     )
     cooking_time = serializers.IntegerField(
-        min_value=MIN_VALUE,
-        max_value=MAX_VALUE,
-        error_messages={
-            'min_value': f'Время приготовления меньше {MIN_VALUE} минуты!',
-            'max_value': f'Время приготовления больше {MAX_VALUE} минут!'
-        }
+        validators=(
+            MinValueValidator(
+                limit_value=MIN_VALUE,
+                message=f'Время приготовления меньше {MIN_VALUE} минуты!'
+            ),
+            MaxValueValidator(
+                limit_value=MAX_VALUE,
+                message=f'Время приготовления больше {MAX_VALUE} минут!'
+            )
+        )
     )
 
     class Meta:
@@ -147,9 +160,9 @@ class RecipeSerializer(serializers.ModelSerializer):
         )
 
     def validate_ingredients(self, ingredients):
-        if not ingredients:
+        if len(ingredients) < 1:
             raise serializers.ValidationError(
-                {'ingredients': 'Нужно выбрать хотя бы один ингредиент!'}
+                {'ingredients': 'Нужно выбрать один ингредиент!'}
             )
         unique_ingredient_id = set()
         for ingredient in ingredients:
@@ -162,14 +175,14 @@ class RecipeSerializer(serializers.ModelSerializer):
         return ingredients
 
     def validate_tags(self, tags):
-        if not tags:
+        if len(tags) < 1:
             raise serializers.ValidationError(
-                {'tags': 'Нужно выбрать хотя бы один тег!'}
+                {'tags': 'Нужно выбрать один тег!'}
             )
 
         if len(tags) != len(set(tags)):
             raise serializers.ValidationError(
-                {'tags': 'Теги не уникальны!'}
+                {'tags': 'Теги должны быть уникальны!'}
             )
 
         return tags
@@ -226,7 +239,7 @@ class RecipeSerializer(serializers.ModelSerializer):
 
 
 class SubscribeRecipeSerializer(serializers.ModelSerializer):
-    """Сериализатор для отображения краткой информации рецептов."""
+    """Сериализатор для отображения информации рецептов."""
 
     class Meta:
         model = Recipe
@@ -248,10 +261,10 @@ class SubscribeListSerializer(ProfileSerializer):
 
     def validate(self, data):
         author = self.instance
-        user = self.context['request'].user
-        if author.subscriptions.filter(user=user).exists():
+        user = self.context.get('request').user
+        if Subscribe.objects.filter(author=author, user=user).exists():
             raise ValidationError(
-                'Подписка уже оформлена!',
+                'Подписка была оформлена!',
             )
         if user == author:
             raise ValidationError(

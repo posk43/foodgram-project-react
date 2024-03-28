@@ -1,20 +1,13 @@
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
-from django.core.validators import (
-    MinValueValidator,
-    RegexValidator,
-    MaxValueValidator
-)
+from django.core.validators import MinValueValidator, RegexValidator
 from django.db import models
 
-from .constant import (
-    LENTH_COLOR,
-    MAX_LENGTH,
-    MAX_VALUE,
-    MIN_VALUE
-)
 
 User = get_user_model()
+
+MAX_LENGTH = 200
+LENTH_COLOR = 7
 
 
 class Ingredient(models.Model):
@@ -86,8 +79,7 @@ class Recipe(models.Model):
     )
     cooking_time = models.PositiveSmallIntegerField(
         verbose_name='Время приготовления (в минутах)',
-        validators=[MinValueValidator(MIN_VALUE),
-                    MaxValueValidator(MAX_VALUE)]
+        validators=[MinValueValidator(1)]
     )
     author = models.ForeignKey(
         User,
@@ -124,8 +116,7 @@ class IngredientInRecipe(models.Model):
         related_name='recipe_ingredients')
     amount = models.PositiveSmallIntegerField(
         verbose_name='Количество',
-        validators=[MinValueValidator(MIN_VALUE),
-                    MaxValueValidator(MAX_VALUE)],
+        validators=[MinValueValidator(1)],
         null=True
     )
 
