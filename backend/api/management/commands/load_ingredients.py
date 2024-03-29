@@ -33,6 +33,7 @@ class Command(BaseCommand):
             'r',
             encoding='utf-8'
         ) as json_file:
+
             json_data = json.load(json_file)
             for item in json_data:
                 Ingredient.objects.create(
