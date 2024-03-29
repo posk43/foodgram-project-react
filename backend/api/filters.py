@@ -63,5 +63,4 @@ class RecipeFilter(FilterSet):
             if not filtered_queryset:
                 return queryset
             return filtered_queryset
-        else:
-            return queryset
+        return queryset

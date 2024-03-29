@@ -115,18 +115,8 @@ class AddIngredientSerializer(serializers.ModelSerializer):
 
     id = serializers.PrimaryKeyRelatedField(queryset=Ingredient.objects.all())
     amount = serializers.IntegerField(
-        validators=[
-            MinValueValidator(
-                limit_value=MIN_INGREDIENT_AMOUNT,
-                message=f'Количество ингредиента меньше '
-                        f'{MIN_INGREDIENT_AMOUNT}!'
-            ),
-            MaxValueValidator(
-                limit_value=MAX_INGREDIENT_AMOUNT,
-                message=f'Количество ингредиента больше '
-                        f'{MAX_INGREDIENT_AMOUNT}!'
-            )
-        ]
+        min_value=MIN_INGREDIENT_AMOUNT,
+        max_value=MAX_INGREDIENT_AMOUNT
     )
 
     class Meta:
@@ -145,17 +135,8 @@ class RecipeSerializer(serializers.ModelSerializer):
         many=True
     )
     cooking_time = serializers.IntegerField(
-        validators=[
-            MinValueValidator(
-                limit_value=MIN_COOKING_TIME,
-                message=f'Время приготовления меньше '
-                        f'{MIN_COOKING_TIME} минуты!'
-            ),
-            MaxValueValidator(
-                limit_value=MAX_COOKING_TIME,
-                message=f'Время приготовления больше {MAX_COOKING_TIME} минут!'
-            )
-        ]
+        min_value=MIN_COOKING_TIME,
+        max_value=MAX_COOKING_TIME
     )
 
     class Meta:

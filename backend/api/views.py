@@ -43,8 +43,10 @@ class RecipeViewSet(ModelViewSet):
     pagination_class = CustomPagination
 
     def get_queryset(self):
-        return Recipe.objects.all().select_related('author').\
-            prefetch_related('ingredients', 'tags').order_by('-id')
+        return (Recipe.objects.all()
+                .select_related('author')
+                .prefetch_related('ingredients', 'tags')
+                .order_by('-id'))
 
     def perform_create(self, serializer):
         serializer.save(author=self.request.user)
